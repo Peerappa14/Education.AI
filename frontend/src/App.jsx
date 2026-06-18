@@ -13,17 +13,46 @@ function App() {
 
     // Persist user and free trial count
     useEffect(() => {
-        const savedUser = localStorage.getItem('ai_tutor_user');
-        if (savedUser) {
-            setUser(JSON.parse(savedUser));
-            setView('chat');
-        }
 
-        const savedCount = localStorage.getItem('ai_tutor_free_questions');
-        if (savedCount !== null) {
-            setFreeQuestions(parseInt(savedCount));
-        }
-    }, []);
+  getRedirectResult(auth)
+    .then((result) => {
+
+      if (result?.user) {
+
+        const userData = {
+          name: result.user.displayName,
+          email: result.user.email,
+          avatar: result.user.photoURL
+        };
+
+        setUser(userData);
+
+        localStorage.setItem(
+          "ai_tutor_user",
+          JSON.stringify(userData)
+        );
+
+        setView("chat");
+
+        console.log("Redirect Login Success");
+      }
+
+    })
+    .catch(console.error);
+
+}, []);
+    // useEffect(() => {
+    //     const savedUser = localStorage.getItem('ai_tutor_user');
+    //     if (savedUser) {
+    //         setUser(JSON.parse(savedUser));
+    //         setView('chat');
+    //     }
+
+    //     const savedCount = localStorage.getItem('ai_tutor_free_questions');
+    //     if (savedCount !== null) {
+    //         setFreeQuestions(parseInt(savedCount));
+    //     }
+    // }, []);
 
     const handleLogin = (userData) => {
         setUser(userData);
