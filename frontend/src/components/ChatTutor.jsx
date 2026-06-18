@@ -63,7 +63,7 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const [selectedLang, setSelectedLang] = useState(languages[0]);
-    const [selectedCategory, setSelectedCategory] = useState({ cat: 'JEE 🎯', sub: 'Mathematics' });
+    const [selectedCategory, setSelectedCategory] = useState(null); // General Mode by default
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     const [isLangOpen, setIsLangOpen] = useState(false);
@@ -89,10 +89,21 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
         setEditText(msg.text);
     };
 
+    const submitEdit = async () => {
+        if (!editText.trim() || loading) return;
+
+        setMessages(prev => prev.map(msg => (
+            msg.id === editMsgId ? { ...msg, text: editText } : msg
+        )));
+        setInput(editText);
+        setEditMsgId(null);
+        setEditText("");
+    };
+
     const startNewChat = () => {
         setMessages([{
             id: Date.now(),
-            text: "Hello! I'm your AI Tutor. How can I help you today? You can ask me anything about your syllabus or competitive exams.",
+            text: "Hi! I'm your AI Assistant. Ask me anything - homework, concepts, exam prep, or anything else! 💡",
             sender: 'bot',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }]);
@@ -135,6 +146,10 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
         setInput("");
         setLoading(true);
 
+        const categoryPayload = selectedCategory?.cat && selectedCategory?.sub
+            ? { cat: selectedCategory.cat, sub: selectedCategory.sub }
+            : null;
+
         if (!user) {
             onUseFreeQuestion();
         }
@@ -144,12 +159,11 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
             const response = await axios.post(`${API_URL}/api/chat`, {
                 message: input,
                 language: selectedLang.code,
-                category: selectedCategory,
+                category: categoryPayload,
                 history: messages.map(msg => ({
                     role: msg.sender === 'bot' ? 'assistant' : 'user',
                     content: msg.text
-                })),
-                model: 'gemini'
+                }))
             });
 
             const botMsg = {
@@ -279,14 +293,31 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
                                 className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
                             >
                                 <BookOpen size={16} className="text-orange-500" />
-                                <span className="hidden sm:inline">{selectedCategory.cat} - {selectedCategory.sub}</span>
-                                <span className="sm:hidden text-xs">Category</span>
+                                <span className="hidden sm:inline">
+                                    {selectedCategory 
+                                        ? `${selectedCategory.cat} - ${selectedCategory.sub}`
+                                        : "General Mode"}
+                                </span>
+                                <span className="sm:hidden text-xs">
+                                    {selectedCategory ? "Cat" : "Gen"}
+                                </span>
                                 <ChevronDown size={14} className={`transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
                             </button>
 
                             {isCategoryOpen && (
                                 <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-fadeInUp z-[60]">
                                     <div className="max-h-[70vh] overflow-y-auto">
+                                        {/* General Mode Option */}
+                                        <div className="p-2 border-b border-slate-100">
+                                            <button
+                                                onClick={() => { setSelectedCategory(null); setIsCategoryOpen(false); }}
+                                                className={`w-full text-left px-3 py-3 rounded-xl text-sm font-bold transition-colors ${selectedCategory === null ? 'bg-purple-50 text-purple-600' : 'text-slate-600 hover:bg-slate-50'}`}
+                                            >
+                                                💬 General Mode (Ask Anything)
+                                            </button>
+                                        </div>
+
+                                        {/* Exam Categories */}
                                         {Object.entries(categories).map(([cat, info]) => (
                                             <div key={cat} className="p-2">
                                                 <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -297,7 +328,7 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
                                                         <button
                                                             key={sub}
                                                             onClick={() => { setSelectedCategory({ cat, sub }); setIsCategoryOpen(false); }}
-                                                            className={`text-left px-3 py-2 rounded-xl text-sm transition-colors ${selectedCategory.cat === cat && selectedCategory.sub === sub ? 'bg-orange-50 text-orange-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}
+                                                            className={`text-left px-3 py-2 rounded-xl text-sm transition-colors ${selectedCategory?.cat === cat && selectedCategory?.sub === sub ? 'bg-orange-50 text-orange-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}
                                                         >
                                                             {sub}
                                                         </button>
@@ -312,10 +343,14 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
 
                         {/* Selected Subcategory Badge (desktop) */}
                         <div className="hidden lg:flex items-center gap-2 text-xs font-bold text-slate-400">
-                            <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                            <div className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md border border-blue-100">
-                                {selectedCategory.sub}
-                            </div>
+                            {selectedCategory && (
+                                <>
+                                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                    <div className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md border border-blue-100">
+                                        {selectedCategory.sub}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -372,12 +407,15 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
                                 <p className="text-slate-500 mb-8 font-medium">Ask me anything about your studies - I'm here 24/7!</p>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
-                                    {(categoryPrompts[selectedCategory.cat] || [
-                                        "Explain quadratic equations",
-                                        "Help with organic chemistry",
-                                        "NEET biology questions",
-                                        "English grammar tips"
-                                    ]).map(prompt => (
+                                    {(selectedCategory 
+                                        ? categoryPrompts[selectedCategory.cat] 
+                                        : [
+                                            "Explain photosynthesis",
+                                            "How does AI work?",
+                                            "What is Python?",
+                                            "Help with math"
+                                        ]
+                                    ).map(prompt => (
                                         <button
                                             key={prompt}
                                             onClick={() => setInput(prompt)}

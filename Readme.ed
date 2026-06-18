@@ -1,0 +1,255 @@
+# AI Tutor India - Readme.ed
+
+## Project Overview
+
+AI Tutor India is a full-stack educational chatbot application built to help Indian students prepare for board exams and competitive exams like JEE, NEET, PUC, and SSLC. The application combines:
+- A React + Vite frontend for interactive student chat and category selection
+- An Express backend that connects to AI providers and PostgreSQL
+- Retrieval-Augmented Generation (RAG) to search educational content before answering student questions
+
+## Repository Structure
+
+- `frontend/` - React app using Vite, Tailwind CSS, and Axios
+- `backend/` - Express server with AI provider logic and PostgreSQL support
+- `backend/database_setup.sql` - PostgreSQL schema for users, resources, chats, and messages
+- `backend/seed_data.sql` - Sample educational knowledge base entries
+- `backend/setup_instructions.md` - Database setup guide
+- `backend/gemini.js` - Gemini multi-turn chat helper
+
+## Logic and Implementation
+
+### 1. User Flow Logic
+
+**Default Mode: General/Generalist (Like ChatGPT/Gemini)**
+
+1. User lands on the landing page and can start a free chat or log in.
+2. If the user is not logged in, they get a limited free question quota (`3` free questions).
+3. By default, the chat opens in **"General Mode"** - no category selection required.
+4. The user can ask any question directly, and the AI will answer based on general knowledge.
+5. **Optional**: User can select a category (JEE, NEET, SSLC, PUC, BE, Languages, Competitive Exams) to get specialized exam-focused answers.
+6. User can also select a language (`English`, `Kannada`, or `Hindi`).
+7. The user types a question and sends it.
+8. The frontend sends a POST request to `/api/chat` with:
+   - `message`
+   - `language`
+   - `category` (optional - defaults to `General` or `null`)
+   - `history`
+   - `model`
+9. The backend returns the AI answer and provider metadata.
+
+**Category Detection Logic (Optional)**
+- If no category is selected, the backend can optionally detect the subject/exam from the question itself.
+- For example, if a user asks "How to prepare for JEE Mains?", the backend can auto-detect the category as `JEE 🎯`.
+- This enables smart category-less answers while maintaining exam accuracy when needed.
+
+### 2. Backend Provider Selection Logic
+
+The backend loads provider credentials from environment variables:
+- `GEMINI_API_KEY`
+- `GROQ_API_KEY`
+- `HUGGINGFACE_TOKEN`
+- Optional `PREFERRED_PROVIDER`
+
+It uses the following logic:
+- Try Gemini first when requested or preferred.
+- If Gemini fails, fallback to Groq if available.
+- If Groq fails, fallback to Hugging Face.
+- If no provider is configured, it throws an error.
+
+The provider code path is:
+- `gemini.js` for Gemini multi-turn chat
+- `groq-sdk` for Groq text completion
+- `@huggingface/inference` for Mistral text generation
+
+### 3. Retrieval-Augmented Generation (RAG)
+
+The backend performs an optional database search based on category selection. This is important for exam accuracy.
+
+**If category is selected (exam-focused mode):**
+1. Query `educational_resources` using:
+   - `stream` from selected category
+   - `category` from selected subcategory
+   - text search against `content`
+2. Combine the top results into a `context` string.
+
+**If no category is selected (general mode):**
+1. Search `educational_resources` broadly using only text search against `content`.
+2. Return general results or skip RAG and rely on AI's general knowledge.
+
+**Both modes:**
+1. Create a system prompt that includes:
+   - A professional AI tutor persona (or general assistant persona for general mode)
+   - Emotional tone rules for different user states
+   - Selected language of response
+   - Educational context from the search results (if any)
+2. Send the full prompt plus the student message to the AI provider.
+
+### 4. Prompt Engineering Logic
+
+**General Mode (No category selected):**
+The system prompt is designed to:
+- Act as a helpful, intelligent general assistant (like ChatGPT/Gemini)
+- Provide clear, step-by-step explanations
+- Adapt tone based on user's intent and question
+- Use the requested language
+
+**Exam-Focused Mode (Category selected):**
+The system prompt in `server.js` is designed to:
+- Enforce syllabus focus (NCERT / board-specific material)
+- Adapt tone with emojis based on student behavior
+- Use the requested language
+- Mention the selected board and subject
+- Guide the AI to answer clearly, step-by-step, and exam-oriented
+
+This helps the AI remain relevant for both general queries and Indian academic exams.
+
+## Data and Database Logic
+
+### Database schema in `backend/database_setup.sql`
+
+- `users`
+  - Stores signed-in users and subscription type
+- `educational_resources`
+  - Stores text content for syllabus, PYQs, notes, and exam patterns
+- `chats`
+  - Stores chat metadata if chat persistence is extended
+- `messages`
+  - Stores individual user/bot messages if chat persistence is extended
+
+### Seed data logic in `backend/seed_data.sql`
+
+The seed file demonstrates how to insert educational content for topics like:
+- SSLC Science and Math
+- BE Computer Science notes
+- Competitive exam patterns and shortcuts
+
+This sample data enables the app to search relevant knowledge before generating answers.
+
+## Frontend Implementation Logic
+
+### Main components
+
+- `frontend/src/App.jsx`
+  - Maintains login state, free question count, and view switching
+  - Persists `user` and `freeQuestions` in `localStorage`
+- `frontend/src/components/LandingPage.jsx`
+  - Displays the hero section, app benefits, and CTA buttons
+- `frontend/src/components/ChatTutor.jsx`
+  - Renders chat interface with **optional** category selection (not required)
+  - Renders language selection dropdown
+  - Initially displays **"General Mode"** - user can ask any question without selecting a category
+  - Users can optionally select a category from the dropdown to switch to exam-focused mode
+  - Implements free-question gating for unauthenticated users
+  - Sends the chat request and displays AI response
+  - Supports message copy, edit state, and chat history preview
+
+### Key UI/UX logic
+
+- **Default state**: Chat starts in General Mode (category is optional/null)
+- **Initial greeting**: "Hi! I'm your AI Assistant. Ask me anything - general knowledge, homework, concepts, exam prep, or anything else!"
+- Category dropdown is collapsible/optional - not forced on user
+- If the user is not logged in and free questions reach `0`, the app opens the auth modal.
+- Category change (when selected) can optionally reset the chat or keep continuity based on UX preference.
+- Messages scroll to the bottom automatically.
+- For exam mode, the chat uses icons and subject categories to create an exam-focused experience.
+- For general mode, the chat looks like a standard ChatGPT/Gemini-style assistant.
+
+## Requirements
+
+### Software requirements
+
+- Node.js 18+ (for backend and frontend)
+- PostgreSQL database
+- npm installed
+- Environment variables configured
+
+### Required environment variables for backend
+
+Create `.env` in `backend/` with:
+
+```
+PORT=5000
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=5432
+DB_DATABASE=ai_tutor_db
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+GROQ_API_KEY=YOUR_GROQ_API_KEY
+HUGGINGFACE_TOKEN=YOUR_HUGGINGFACE_TOKEN
+PREFERRED_PROVIDER=gemini
+```
+
+### Optional frontend environment
+
+In `frontend/`, you can set `VITE_API_BASE_URL` in a `.env` file if the backend URL differs from `http://localhost:5000`.
+
+## Setup and Run Steps
+
+1. Install backend dependencies:
+   - `cd ai-edu-agent/backend`
+   - `npm install`
+2. Create PostgreSQL database:
+   - `createdb ai_tutor_db` or use pgAdmin
+3. Execute `backend/database_setup.sql` in PostgreSQL.
+4. Insert sample data using `backend/seed_data.sql` or your own educational content.
+5. Create backend `.env` with database creds and API keys.
+6. Start backend server:
+   - `npm run dev`
+7. Install frontend dependencies:
+   - `cd ../frontend`
+   - `npm install`
+8. Start frontend app:
+   - `npm run dev`
+9. Open the Vite URL shown in the console.
+
+## How the Logic Works Step by Step
+
+### General Mode (Default - Like ChatGPT/Gemini)
+1. User opens the app and starts chatting immediately without category selection.
+2. User types a general question (e.g., "How does photosynthesis work?", "Explain AI", "What is Python?").
+3. Frontend sends the question to `/api/chat` with `category: null` or `General`.
+4. Backend skips category-specific RAG or performs broad text search.
+5. Backend builds a general assistant system prompt.
+6. Backend sends the prompt and question to the AI provider.
+7. AI provider returns a general knowledge answer.
+8. Backend returns the response to the frontend.
+9. Frontend displays the answer.
+
+### Exam-Focused Mode (Category Selected)
+1. User optionally selects a category (JEE, NEET, SSLC, PUC, etc.) from the dropdown.
+2. User types a question related to that exam/subject.
+3. Frontend sends the question and category metadata to `/api/chat`.
+4. Backend queries PostgreSQL for relevant syllabus/text resources for that category.
+5. Backend builds an instruction-rich system prompt for that exam/subject.
+6. Backend sends the prompt and question to the AI provider.
+7. AI provider returns an exam-focused answer.
+8. Backend returns the response to the frontend.
+9. Frontend displays the answer and model provider name.
+
+## Notes and Future Improvements
+
+- The current frontend stores chat state locally and does not persist full chat history to the backend yet.
+- The backend supports provider fallback logic and can be extended to support more guardrails or more precise RAG retrieval.
+- You can expand `educational_resources` with more NCERT, PYQ, and board-specific notes for better accuracy.
+- **Implementation note**: For the new General Mode, the backend should handle `category: null` or `category: 'General'` and skip category-specific RAG searches.
+- **Future enhancement**: Implement automatic category detection from the question text to intelligently route between general and exam-focused modes.
+- **Future enhancement**: Add category suggestions when user is in general mode ("This looks like a JEE question, want specialized answers?").
+
+## Summary of the Core Logic
+
+**Dual-Mode Architecture:**
+- **General Mode (Default)**: Works like ChatGPT/Gemini - user asks questions freely without category selection
+- **Exam-Focused Mode (Optional)**: When user selects a category, answers are grounded in syllabus and exam patterns
+
+**Key Features:**
+- Provider selection and fallback ensures the app keeps working even if one AI provider fails.
+- RAG search improves answer accuracy by grounding the AI in real educational content when a category is selected.
+- Prompt engineering adapts based on mode: general assistant or exam-focused tutor.
+- Free user gating provides trial usage before login or upgrade.
+- Optional category + language selection customizes the response style and content depth.
+- Initial UX is frictionless - users start chatting immediately without mandatory category selection.
+
+---
+
+This `Readme.ed` is designed to explain the implementation clearly for GitHub and to help you add the project documentation in the repo root.
