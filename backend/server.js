@@ -43,7 +43,7 @@ const hf = !isPlaceholder(hfToken) ? new HfInference(hfToken) : null;
 console.log("Providers Initialized:", { gemini: !!process.env.GEMINI_API_KEY, groq: !!groq, huggingface: !!hf });
 
 // Helper to generate AI response from available providers
-async function generateAIResponse(prompt, provider = process.env.PREFERRED_PROVIDER || 'gemini') {
+async function generateAIResponse(prompt, provider = process.env.PREFERRED_PROVIDER || 'groq') {
   console.log(`Attempting response with: ${provider}`);
   try {
     if (provider === 'gemini' && process.env.GEMINI_API_KEY) {
@@ -58,10 +58,24 @@ async function generateAIResponse(prompt, provider = process.env.PREFERRED_PROVI
   model: "qwen/qwen3-32b",
 });
       console.log("Groq Success");
-     return {
-  text: completion.choices[0]?.message?.content || "",
+      let response =
+  completion.choices[0]?.message?.content || "";
+
+response = response
+  .replace(/<think>[\s\S]*?<\/think>/gi, "")
+  .replace(/#{1,6}\s/g, "")
+  .replace(/---+/g, "")
+  .replace(/\*\*/g, "")
+  .trim();
+
+return {
+  text: response,
   provider: 'Qwen 3 32B'
 };
+//      return {
+//   text: completion.choices[0]?.message?.content || "",
+//   provider: 'Qwen 3 32B'
+// };
     }
 
     if (provider === 'huggingface' && hf) {
@@ -164,12 +178,19 @@ let isGeneralMode =
         - Provide step-by-step explanations when needed
         - Adapt tone based on the question type
         
-        Guidelines:
-        1. Respond in ${language === 'kn' ? 'Kannada' : language === 'hi' ? 'Hindi' : 'English'}.
-        2. Provide accurate, helpful information from your training
-        3. Ask clarifying questions if needed
-        4. Be concise but thorough
-        5. Encourage learning and curiosity
+       Guidelines:
+1. Respond in ${language === 'kn' ? 'Kannada' : language === 'hi' ? 'Hindi' : 'English'}.
+2. Provide accurate and helpful answers.
+3. Use simple conversational language.
+4. Do NOT use <think> tags.
+5. Do NOT show your reasoning process.
+6. Do NOT use markdown headings (#, ##, ###).
+7. Do NOT use horizontal lines (---).
+8. Avoid excessive bullet points.
+9. Use emojis only when they naturally fit the conversation.
+10. Answer like a friendly teacher talking to a student.
+11. Prefer short paragraphs over lists.
+12. Maximum 250 words unless the user asks for a detailed explanation.
       `;
     } else if (category && category.cat && category.sub) {
       // Exam-Focused Mode Prompt

@@ -1,15 +1,54 @@
 import React from 'react';
 import { X, GraduationCap } from 'lucide-react';
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../firebase";
 
 const AuthModal = ({ onClose, onLogin }) => {
-    const handleGoogleLogin = () => {
-        // Simulate Google Login
-        onLogin({
-            name: "John Doe",
-            email: "john@example.com",
-            avatar: "JD"
-        });
-    };
+const handleGoogleLogin = async () => {
+    console.log("🔥 Google button clicked");
+    alert("Google button clicked");
+
+    try {
+        console.log("🚀 Starting Firebase Login");
+
+        const result = await signInWithPopup(auth, provider);
+
+        console.log("✅ Firebase Login Success");
+        console.log("User Object:", result.user);
+        console.log("UID:", result.user.uid);
+        console.log("Name:", result.user.displayName);
+        console.log("Email:", result.user.email);
+        console.log("Photo URL:", result.user.photoURL);
+
+        const userData = {
+            name: result.user.displayName,
+            email: result.user.email,
+            avatar: result.user.photoURL
+        };
+
+        console.log("📦 User Data:", userData);
+
+        onLogin(userData);
+
+        console.log("✅ onLogin Executed");
+        console.log(
+            "📂 Local Storage:",
+            localStorage.getItem("ai_tutor_user")
+        );
+
+        onClose();
+
+        console.log("✅ Modal Closed");
+
+    } catch (error) {
+        console.error("❌ FIREBASE LOGIN ERROR");
+        console.error("Full Error:", error);
+        console.error("Code:", error.code);
+        console.error("Message:", error.message);
+
+        alert(error.message);
+    }
+};
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
