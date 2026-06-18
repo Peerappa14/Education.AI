@@ -163,7 +163,8 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
                 history: messages.map(msg => ({
                     role: msg.sender === 'bot' ? 'assistant' : 'user',
                     content: msg.text
-                }))
+                })),
+                model: 'gemini'
             });
 
             const botMsg = {
@@ -380,11 +381,25 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
                             )}
                         </div>
 
-                        {user ? (
-                            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-bold border-2 border-slate-200">
-                                {user.avatar}
-                            </div>
-                        ) : (
+                  {user ? (
+  user.avatar ? (
+    <img
+      src={user.avatar}
+      alt={user.name}
+      className="w-10 h-10 rounded-full border-2 border-slate-200 object-cover"
+    />
+  ) : (
+   <div className="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold">
+  {user.name
+    ?.split(" ")
+    .map(word => word[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase()}
+</div>
+  )
+) : (
+  // Sign In button
                             <button
                                 onClick={onOpenAuth}
                                 className="hidden sm:block text-sm font-bold text-orange-500 border-2 border-orange-500 px-4 py-1.5 rounded-xl hover:bg-orange-50"

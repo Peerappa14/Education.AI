@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, GraduationCap } from 'lucide-react';
-import { signInWithPopup } from "firebase/auth";
+import { signInWithRedirect } from "firebase/auth";
 import { auth, provider } from "../firebase";
 
 const AuthModal = ({ onClose, onLogin }) => {
@@ -11,7 +11,7 @@ const handleGoogleLogin = async () => {
     try {
         console.log("🚀 Starting Firebase Login");
 
-        const result = await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
 
         console.log("✅ Firebase Login Success");
         console.log("User Object:", result.user);
