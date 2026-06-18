@@ -3,6 +3,8 @@ import LandingPage from './components/LandingPage';
 import ChatTutor from './components/ChatTutor';
 import AuthModal from './components/AuthModal';
 import UpgradeModal from './components/UpgradeModal';
+import { getRedirectResult } from "firebase/auth";
+import { auth } from "./firebase";
 
 function App() {
     const [user, setUser] = useState(null);
