@@ -24,7 +24,9 @@ const handleGoogleLogin = async () => {
             email: result.user.email,
             avatar: result.user.photoURL
         };
-
+console.log("📦 User Data:", userData);
+console.log("🖼️ Avatar URL:", result.user.photoURL);
+console.log("🖼️ Avatar Exists?", !!result.user.photoURL);
         console.log("📦 User Data:", userData);
 
         onLogin(userData);

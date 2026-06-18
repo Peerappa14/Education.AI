@@ -55,8 +55,15 @@ function App() {
     // }, []);
 
     const handleLogin = (userData) => {
+         console.log("🔥 handleLogin called");
+    console.log("User Received:", userData);
         setUser(userData);
         localStorage.setItem('ai_tutor_user', JSON.stringify(userData));
+           console.log(
+        "Saved User:",
+        JSON.parse(localStorage.getItem("ai_tutor_user"))
+         );
+        
         setShowAuthModal(false);
         setView('chat');
     };

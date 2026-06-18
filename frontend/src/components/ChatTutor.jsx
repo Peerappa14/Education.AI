@@ -381,23 +381,34 @@ const ChatTutor = ({ user, onLogout, freeQuestions, onUseFreeQuestion, onOpenUpg
                             )}
                         </div>
 
-                  {user ? (
-  user.avatar ? (
-    <img
-      src={user.avatar}
-      alt={user.name}
-      className="w-10 h-10 rounded-full border-2 border-slate-200 object-cover"
-    />
-  ) : (
-   <div className="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold">
-  {user.name
-    ?.split(" ")
-    .map(word => word[0])
-    .join("")
-    .substring(0, 2)
-    .toUpperCase()}
-</div>
-  )
+            {user ? (
+  <div className="w-10 h-10">
+    {user.avatar && user.avatar.trim() !== "" ? (
+      <img
+        src={user.avatar}
+        alt={user.name}
+        className="w-10 h-10 rounded-full border-2 border-slate-200 object-cover"
+        onError={(e) => {
+          e.target.style.display = "none";
+          e.target.nextSibling.style.display = "flex";
+        }}
+      />
+    ) : null}
+
+    <div
+      style={{
+        display: user.avatar ? "none" : "flex"
+      }}
+      className="w-10 h-10 rounded-full bg-orange-500 text-white items-center justify-center font-bold"
+    >
+      {user.name
+        ?.split(" ")
+        .map(word => word[0])
+        .join("")
+        .substring(0, 2)
+        .toUpperCase()}
+    </div>
+  </div>
 ) : (
   // Sign In button
                             <button
