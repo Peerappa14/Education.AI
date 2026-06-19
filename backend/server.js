@@ -12,7 +12,14 @@ dotenv.config();
 console.log("GEMINI KEY:", process.env.GEMINI_API_KEY ? "FOUND" : "MISSING");
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://education-ai-1-6ld1.onrender.com"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
@@ -241,6 +248,47 @@ res.status(500).json({
 });
 }
 });
+
+// Save Google User
+app.post('/api/users/login', async (req, res) => {
+  console.log("LOGIN API HIT");
+  console.log(req.body);
+  try {
+
+    const { name, email, avatar } = req.body;
+
+    console.log("User Login Request:");
+    console.log(req.body);
+
+    const result = await pool.query(
+      `
+      INSERT INTO users(name,email)
+      VALUES($1,$2)
+      ON CONFLICT(email)
+      DO NOTHING
+      RETURNING *
+      `,
+      [name, email]
+    );
+
+    console.log("User Saved");
+
+    res.json({
+      success: true
+    });
+
+  } catch (error) {
+
+    console.error("USER SAVE ERROR");
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 AI Tutor Backend is LIVE!`);

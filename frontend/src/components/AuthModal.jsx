@@ -24,6 +24,43 @@ const handleGoogleLogin = async () => {
             email: result.user.email,
             avatar: result.user.photoURL
         };
+
+        try {
+    const response = await fetch(
+        "https://education-ai-1-6ld1.onrender.com/api/users/login",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(userData)
+        }
+    );
+
+    console.log("Response Status:", response.status);
+
+    const data = await response.text();
+
+    console.log("Response Data:", data);
+
+    console.log("✅ User Saved To PostgreSQL");
+
+} catch (err) {
+    console.error("❌ FETCH FAILED");
+    console.error(err);
+}
+//         await fetch(
+//     "https://education-ai-1-6ld1.onrender.com/api/users/login",
+//     {
+//         method: "POST",
+//         headers: {
+//             "Content-Type": "application/json"
+//         },
+//         body: JSON.stringify(userData)
+//     }
+// );
+
+console.log("✅ User Saved To PostgreSQL");
 console.log("📦 User Data:", userData);
 console.log("🖼️ Avatar URL:", result.user.photoURL);
 console.log("🖼️ Avatar Exists?", !!result.user.photoURL);
