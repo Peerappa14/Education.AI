@@ -305,6 +305,22 @@ console.log("User Saved");
     });
   }
 });
+app.get('/api/users', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM users ORDER BY id DESC'
+    );
+
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
 
 
 app.listen(PORT, '0.0.0.0', () => {
