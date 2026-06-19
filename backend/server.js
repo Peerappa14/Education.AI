@@ -37,6 +37,15 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
+
+pool.query(
+  "SELECT current_database(), current_user"
+)
+.then(result => {
+  console.log("DB INFO:");
+  console.log(result.rows);
+})
+.catch(console.error);
 // Initialize Providers
 const isPlaceholder = (key) => !key || key.includes('YOUR_') || key.includes('_HERE');
 
@@ -270,6 +279,14 @@ app.post('/api/users/login', async (req, res) => {
       `,
       [name, email]
     );
+
+    console.log("Inserted Rows:");
+console.log(result.rows);
+
+console.log("Row Count:");
+console.log(result.rowCount);
+
+console.log("User Saved");
 
     console.log("User Saved");
 
